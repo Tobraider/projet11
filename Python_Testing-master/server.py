@@ -31,6 +31,7 @@ def showSummary():
         club = club[0]
         return render_template('welcome.html',club=club,competitions=competitions)
     else:
+        flash("Can't find a club with this email")
         return redirect(url_for('index'))
 
 
