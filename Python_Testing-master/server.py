@@ -1,5 +1,6 @@
 import json
 from flask import Flask,render_template,request,redirect,flash,url_for
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 
 
 def loadClubs():
@@ -17,6 +18,23 @@ def loadCompetitions():
 app = Flask(__name__)
 app.secret_key = 'something_special'
 
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+class User(UserMixin):
+    def __init__(self, user_id, name_club, point_club):
+        self.id = user_id
+        self.name = name_club
+        self.points = point_club
+
+@login_manager.user_loader
+def load_user(user_id):
+    club = [club for club in clubs if club['email'] == user_id][0]
+    if club != []:
+        return User(user_id, club["name"], club["points"])
+    else:
+        raise ValueError("user_id isn't find in email club")
+
 competitions = loadCompetitions()
 clubs = loadClubs()
 
@@ -29,6 +47,8 @@ def showSummary():
     club = [club for club in clubs if club['email'] == request.form['email']]
     if club:
         club = club[0]
+        user = User(club["email"], club["name"], club["points"])
+        login_user(user)
         return render_template('welcome.html',club=club,competitions=competitions)
     else:
         flash("Can't find a club with this email")
@@ -36,6 +56,7 @@ def showSummary():
 
 
 @app.route('/book/<competition>/<club>')
+@login_required
 def book(competition,club):
     foundClub = [c for c in clubs if c['name'] == club][0]
     foundCompetition = [c for c in competitions if c['name'] == competition][0]
@@ -47,6 +68,7 @@ def book(competition,club):
 
 
 @app.route('/purchasePlaces',methods=['POST'])
+@login_required
 def purchasePlaces():
     competition = [c for c in competitions if c['name'] == request.form['competition']][0]
     club = [c for c in clubs if c['name'] == request.form['club']][0]
@@ -61,4 +83,5 @@ def purchasePlaces():
 
 @app.route('/logout')
 def logout():
+    logout_user()
     return redirect(url_for('index'))
