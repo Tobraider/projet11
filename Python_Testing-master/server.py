@@ -29,8 +29,9 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    club = [club for club in clubs if club['email'] == user_id][0]
-    if club != []:
+    club = [club for club in clubs if club['email'] == user_id]
+    if club:
+        club = club[0]
         return User(user_id, club["name"], club["points"])
     else:
         raise ValueError("user_id isn't find in email club")
