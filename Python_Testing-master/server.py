@@ -112,6 +112,8 @@ def purchasePlaces():
                             club['points'] = str(int(club['points']) - placesRequired)
                             saveClubs(clubs)
                             saveCompetitions(competitions)
+                            competitions = loadCompetitions()
+                            clubs = loadClubs()
                             flash('Great-booking complete!')
                         else:
                             flash(f"You can book only {12 - int(competition['placesBooked'][club['name']])} more places (limit 12)")
@@ -121,6 +123,8 @@ def purchasePlaces():
                         club['points'] = str(int(club['points']) - placesRequired)
                         saveClubs(clubs)
                         saveCompetitions(competitions)
+                        competitions = loadCompetitions()
+                        clubs = loadClubs()
                         flash('Great-booking complete!')
                     else:
                         flash("You can't buy more than 12 places")
