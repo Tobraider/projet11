@@ -14,11 +14,25 @@ def loadCompetitions():
          return listOfCompetitions
 
 
+def saveClubs(clubs):
+    with open('clubs.json', 'w') as c:
+        data = {"clubs":clubs}
+        c.write(json.dumps(data, indent=4))
+
+
+def saveCompetitions(competitions):
+    with open('competitions.json', 'w') as c:
+        data = {"competitions":competitions}
+        c.write(json.dumps(data, indent=4))
+
+
+
 app = Flask(__name__)
 app.secret_key = 'something_special'
 
 competitions = loadCompetitions()
 clubs = loadClubs()
+
 
 @app.route('/')
 def index():
