@@ -85,11 +85,40 @@ def book(competition,club):
 @app.route('/purchasePlaces',methods=['POST'])
 @login_required
 def purchasePlaces():
-    competition = [c for c in competitions if c['name'] == request.form['competition']][0]
-    club = [c for c in clubs if c['name'] == request.form['club']][0]
-    placesRequired = int(request.form['places'])
-    competition['numberOfPlaces'] = int(competition['numberOfPlaces'])-placesRequired
-    flash('Great-booking complete!')
+    competition = [c for c in competitions if c['name'] == request.form['competition']]
+    if competition:
+        competition = competition[0]
+    club = [c for c in clubs if c['name'] == request.form['club']]
+    if club:
+        club = club[0]
+    if competition and club:
+        placesRequired = int(request.form['places'])
+        if placesRequired > 0:
+            if int(club['points']) - placesRequired >= 0:
+                if int(competition['numberOfPlaces']) - placesRequired <= 0:
+                    if club['name'] in competition['placesBooked']:
+                        if int(competition['placesBooked'][club['name']]) + placesRequired <= 12:
+                            competition['numberOfPlaces'] = int(competition['numberOfPlaces']) - placesRequired
+                            competition['placesBooked'][club['name']] = int(competition['placesBooked'][club['name']]) + placesRequired
+                            club['points'] = int(club['points']) - placesRequired
+                            # NEED SAVE IN JSON
+                            flash('Great-booking complete!')
+                        else:
+                            flash(f"You can book only {12 - int(competition['placesBooked'][club['name']])} more places (limit 12)")
+                    elif placesRequired <= 12:
+                        competition['numberOfPlaces'] = int(competition['numberOfPlaces']) - placesRequired
+                        competition['placesBooked'][club['name']] = int(competition['placesBooked'][club['name']]) + placesRequired
+                        club['points'] = int(club['points']) - placesRequired
+                        # NEED SAVE IN JSON
+                        flash('Great-booking complete!')
+                    else:
+                        flash("You can't buy more than 12 places")
+                else:
+                    flash('There is no more places')
+            else:
+                flash("You don't have enough points")
+        else:
+            flash("You can't buy a negative number or zero places")
     return render_template('welcome.html', club=club, competitions=competitions)
 
 
