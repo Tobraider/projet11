@@ -101,7 +101,8 @@ def purchasePlaces():
                             competition['numberOfPlaces'] = int(competition['numberOfPlaces']) - placesRequired
                             competition['placesBooked'][club['name']] = int(competition['placesBooked'][club['name']]) + placesRequired
                             club['points'] = int(club['points']) - placesRequired
-                            # NEED SAVE IN JSON
+                            saveClubs(clubs)
+                            saveCompetitions(competitions)
                             flash('Great-booking complete!')
                         else:
                             flash(f"You can book only {12 - int(competition['placesBooked'][club['name']])} more places (limit 12)")
@@ -109,7 +110,8 @@ def purchasePlaces():
                         competition['numberOfPlaces'] = int(competition['numberOfPlaces']) - placesRequired
                         competition['placesBooked'][club['name']] = int(competition['placesBooked'][club['name']]) + placesRequired
                         club['points'] = int(club['points']) - placesRequired
-                        # NEED SAVE IN JSON
+                        saveClubs(clubs)
+                        saveCompetitions(competitions)
                         flash('Great-booking complete!')
                     else:
                         flash("You can't buy more than 12 places")
