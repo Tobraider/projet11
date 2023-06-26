@@ -2,30 +2,31 @@ import json
 from flask import Flask,render_template,request,redirect,flash,url_for
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 
+jsonClub = 'clubs.json'
+jsonCompetition = 'competitions.json'
 
 def loadClubs():
-    with open('clubs.json') as c:
+    with open(jsonClub) as c:
          listOfClubs = json.load(c)['clubs']
          return listOfClubs
 
 
 def loadCompetitions():
-    with open('competitions.json') as comps:
+    with open(jsonCompetition) as comps:
          listOfCompetitions = json.load(comps)['competitions']
          return listOfCompetitions
 
 
 def saveClubs(clubs):
-    with open('clubs.json', 'w') as c:
+    with open(jsonClub, 'w') as c:
         data = {"clubs":clubs}
         c.write(json.dumps(data, indent=4))
 
 
 def saveCompetitions(competitions):
-    with open('competitions.json', 'w') as c:
+    with open(jsonCompetition, 'w') as c:
         data = {"competitions":competitions}
         c.write(json.dumps(data, indent=4))
-
 
 
 app = Flask(__name__)
@@ -48,6 +49,10 @@ def load_user(user_id):
         return User(user_id, club["name"], club["points"])
     else:
         raise ValueError("user_id isn't find in email club")
+    
+@login_manager.unauthorized_handler
+def unauthorized_callback():
+    return redirect(url_for('index'))
 
 competitions = loadCompetitions()
 clubs = loadClubs()
@@ -83,7 +88,7 @@ def book(competition,club):
         return render_template('booking.html',club=foundClub,competition=foundCompetition)
     else:
         flash("Something went wrong-please try again")
-        return render_template('welcome.html', club=club, competitions=competitions)
+        return redirect(url_for('showSummary'))
 
 
 @app.route('/purchasePlaces',methods=['POST'])
@@ -99,21 +104,21 @@ def purchasePlaces():
         placesRequired = int(request.form['places'])
         if placesRequired > 0:
             if int(club['points']) - placesRequired >= 0:
-                if int(competition['numberOfPlaces']) - placesRequired <= 0:
+                if int(competition['numberOfPlaces']) - placesRequired >= 0:
                     if club['name'] in competition['placesBooked']:
                         if int(competition['placesBooked'][club['name']]) + placesRequired <= 12:
-                            competition['numberOfPlaces'] = int(competition['numberOfPlaces']) - placesRequired
-                            competition['placesBooked'][club['name']] = int(competition['placesBooked'][club['name']]) + placesRequired
-                            club['points'] = int(club['points']) - placesRequired
+                            competition['numberOfPlaces'] = str(int(competition['numberOfPlaces']) - placesRequired)
+                            competition['placesBooked'][club['name']] = str(int(competition['placesBooked'][club['name']]) + placesRequired)
+                            club['points'] = str(int(club['points']) - placesRequired)
                             saveClubs(clubs)
                             saveCompetitions(competitions)
                             flash('Great-booking complete!')
                         else:
                             flash(f"You can book only {12 - int(competition['placesBooked'][club['name']])} more places (limit 12)")
                     elif placesRequired <= 12:
-                        competition['numberOfPlaces'] = int(competition['numberOfPlaces']) - placesRequired
-                        competition['placesBooked'][club['name']] = int(competition['placesBooked'][club['name']]) + placesRequired
-                        club['points'] = int(club['points']) - placesRequired
+                        competition['numberOfPlaces'] = str(int(competition['numberOfPlaces']) - placesRequired)
+                        competition['placesBooked'][club['name']] = str(placesRequired)
+                        club['points'] = str(int(club['points']) - placesRequired)
                         saveClubs(clubs)
                         saveCompetitions(competitions)
                         flash('Great-booking complete!')
@@ -125,7 +130,7 @@ def purchasePlaces():
                 flash("You don't have enough points")
         else:
             flash("You can't buy a negative number or zero places")
-    return render_template('welcome.html', club=club, competitions=competitions)
+    return redirect(url_for('showSummary'))
 
 
 @app.route('/tablePoints')
@@ -134,6 +139,7 @@ def tablePoints():
 
 
 @app.route('/logout')
+@login_required
 def logout():
     logout_user()
     return redirect(url_for('index'))
