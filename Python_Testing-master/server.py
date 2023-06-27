@@ -1,6 +1,6 @@
 import json
 from flask import Flask,render_template,request,redirect,flash,url_for
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 
 jsonClub = 'clubs.json'
 jsonCompetition = 'competitions.json'
@@ -69,11 +69,15 @@ def showSummary():
         club = club[0]
         user = User(club["email"], club["name"], club["points"])
         login_user(user)
-        return render_template('welcome.html',club=club,competitions=competitions)
+        return redirect(url_for('home'))
     else:
         flash("Can't find a club with this email")
         return redirect(url_for('index'))
 
+@app.route('/home')
+@login_required
+def home():
+    return render_template('welcome.html',club=current_user,competitions=competitions)
 
 @app.route('/book/<competition>/<club>')
 @login_required
@@ -88,7 +92,7 @@ def book(competition,club):
         return render_template('booking.html',club=foundClub,competition=foundCompetition)
     else:
         flash("Something went wrong-please try again")
-        return redirect(url_for('showSummary'))
+        return redirect(url_for('home'))
 
 
 @app.route('/purchasePlaces',methods=['POST'])
@@ -130,7 +134,7 @@ def purchasePlaces():
                 flash("You don't have enough points")
         else:
             flash("You can't buy a negative number or zero places")
-    return redirect(url_for('showSummary'))
+    return redirect(url_for('home'))
 
 
 @app.route('/tablePoints')
