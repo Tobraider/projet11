@@ -29,7 +29,6 @@ def saveCompetitions(competitions):
         data = {"competitions":competitions}
         c.write(json.dumps(data, indent=4))
 
-
 # filter pour jinja2
 def string_to_datetime(date_string, format):
     return datetime.strptime(date_string, format)
@@ -38,16 +37,27 @@ def string_to_datetime(date_string, format):
 app = Flask(__name__)
 app.secret_key = 'something_special'
 
+# mise en place du filtre dans jinja2
 app.jinja_env.filters['string_to_datetime'] = string_to_datetime
+
 
 login_manager = LoginManager()
 login_manager.init_app(app)
+
 
 class User(UserMixin):
     def __init__(self, user_id, name_club, point_club):
         self.id = user_id
         self.name = name_club
         self.points = point_club
+
+def clubIsUser(club, user):
+    userDict = dict(user.__dict__)
+    userDict['email'] = userDict['id']
+    for cle in club:
+        if club[cle] != userDict[cle]:
+            return False
+    return True
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -57,10 +67,12 @@ def load_user(user_id):
         return User(user_id, club["name"], club["points"])
     else:
         raise ValueError("user_id isn't find in email club")
-    
+
+
 @login_manager.unauthorized_handler
 def unauthorized_callback():
     return redirect(url_for('index'))
+
 
 competitions = loadCompetitions()
 clubs = loadClubs()
@@ -69,6 +81,7 @@ clubs = loadClubs()
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 @app.route('/showSummary',methods=['POST'])
 def showSummary():
@@ -82,10 +95,12 @@ def showSummary():
         flash("Can't find a club with this email")
         return redirect(url_for('index'))
 
+
 @app.route('/home')
 @login_required
 def home():
     return render_template('welcome.html',club=current_user,competitions=competitions,today=datetime.now())
+
 
 @app.route('/book/<competition>/<club>')
 @login_required
@@ -113,7 +128,7 @@ def purchasePlaces():
     if club:
         club = club[0]
     if competition and club:
-        if datetime.now()<datetime.strptime(competition['date'], "%Y-%m-%d %H:%M:%S"):
+        if datetime.now()<datetime.strptime(competition['date'], "%Y-%m-%d %H:%M:%S") and clubIsUser(club, current_user):
             try:
                 placesRequired = int(request.form['places'])
             except ValueError:
