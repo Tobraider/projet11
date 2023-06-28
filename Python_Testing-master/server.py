@@ -114,7 +114,10 @@ def purchasePlaces():
         club = club[0]
     if competition and club:
         if datetime.now()<datetime.strptime(competition['date'], "%Y-%m-%d %H:%M:%S"):
-            placesRequired = int(request.form['places'])
+            try:
+                placesRequired = int(request.form['places'])
+            except ValueError:
+                return redirect(url_for('home'))
             if placesRequired > 0:
                 if int(club['points']) - placesRequired >= 0:
                     if int(competition['numberOfPlaces']) - placesRequired >= 0:
